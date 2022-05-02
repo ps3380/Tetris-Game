@@ -1,11 +1,17 @@
 import pygame
 import random
-
+import xlwt
+import xlrd
 """
 10 x 20 square grid
 shapes: S, Z, I, O, J, L, T
 represented in order by 0 - 6
 """
+r_wb=xlrd.open_workbook("score.xls") # file read
+r_ws=r_wb.sheet_by_index(0)
+wb=xlwt.Workbook(encoding='utf-8') # xlsx file write
+ws=wb.add_sheet('sheet1')
+score_board = []
 
 pygame.font.init()
 
@@ -140,6 +146,14 @@ class Piece(object):
         self.color = shape_colors[shapes.index(shape)]
         self.rotation = 0  # number from 0-3
 
+def save_score(score):
+    for i in range(r_ws.nrows):
+        ws.write(i,0,r_ws.row_values(i)[0])
+        ws.write(i,1,r_ws.row_values(i)[1])
+    ws.write(r_ws.nrows,0,str(r_ws.nrows)+"time")
+    ws.write(r_ws.nrows,1,score)
+    wb.save('score.xls')
+
 
 def create_grid(locked_positions={}):
     grid = [[(0,0,0) for x in range(10)] for x in range(20)]
@@ -200,6 +214,12 @@ def draw_text_middle(text, size, color, surface):
     label = font.render(text, 1, color)
 
     surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/2 - label.get_height()/2))
+
+def draw_text_score(text, size, color, surface,temp):
+    font = pygame.font.SysFont('comicsans', size, bold=True)
+    label = font.render(text, 1, color)
+
+    surface.blit(label, (top_left_x + play_width/2 - (label.get_width() / 2), top_left_y + play_height/6 - label.get_height()/6+temp))
 
 
 def draw_grid(surface, row, col):
@@ -368,10 +388,21 @@ def main():
         # Check if user lost
         if check_lost(locked_positions):
             run = False
-
+            
+    save_score(score)  #save score
+    
+    for i in range(r_ws.nrows-1):
+        score_board.append(r_ws.cell_value(i,1))
+    score_board.sort(reverse=True)
+    
     draw_text_middle("You Lost", 40, (255,255,255), win)
+    k=0
+    for i in range(5):
+        k = k + 25
+        draw_text_score( str(i+1)+" "+str(score_board[i]), 40, (255,255,255), win,k)
+
     pygame.display.update()
-    pygame.time.delay(2000)
+    pygame.time.delay(4000)
 
 
 def main_menu():
